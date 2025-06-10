@@ -1,0 +1,48 @@
+import requests
+import json
+import webbrowser
+import tkinter.messagebox as messagebox
+import tkinter as tk
+
+# URL du fichier JSON sur GitHub
+URL_GITHUB = "https://raw.githubusercontent.com/Zack140821/TestPy/main/version.json"
+REPO_URL = "https://github.com/Zack140821/TestPy"
+
+def obtenir_version():
+    """Récupère la version distante et locale"""
+    try:
+        reponse = requests.get(URL_GITHUB)
+        reponse.raise_for_status()
+        version_distante = json.loads(reponse.text).get("version", "Erreur")
+    except (requests.RequestException, json.JSONDecodeError):
+        version_distante = "Erreur"
+
+    try:
+        with open("version.json", "r") as fichier_local:
+            version_locale = json.load(fichier_local).get("version", "Introuvable")
+    except (FileNotFoundError, json.JSONDecodeError):
+        version_locale = "Introuvable"
+
+    return version_locale, version_distante
+
+def verifier_mise_a_jour():
+    """Compare les versions et affiche une alerte si une mise à jour est disponible"""
+    version_locale, version_distante = obtenir_version()
+
+    if version_locale != "Introuvable" and version_locale < version_distante:
+        afficher_message_update()
+        return True
+    return False
+
+def afficher_message_update():
+    """Affiche une boîte de dialogue Windows pour alerter l'utilisateur"""
+    root = tk.Tk()
+    root.withdraw()  # Cache la fenêtre Tkinter
+    reponse = messagebox.askyesno("Mise à jour disponible", "Une nouvelle version est disponible ! Voulez-vous la télécharger ?")
+
+    if reponse:  # Si l'utilisateur clique sur "Oui"
+        ouvrir_github()
+
+def ouvrir_github():
+    """Ouvre le dépôt GitHub dans le navigateur"""
+    webbrowser.open(REPO_URL)
